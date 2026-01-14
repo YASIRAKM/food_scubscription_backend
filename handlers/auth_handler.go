@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	
 	"myapp/config"
 	"myapp/models"
 	"net/http"
@@ -28,14 +27,14 @@ type LoginRequest struct {
 	Password    string `json:"password"`
 }
 
-func Register(c echo.Context)error{
+func Register(c echo.Context) error {
 	req := new(RegisterRequest)
-	if err:= c.Bind(req);err != nil{
+	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"message": "Invalid request",
 		})
 	}
-	hashedPassword,_ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	user := models.User{
 		FName:       req.FName,
 		LName:       req.LName,
@@ -54,9 +53,7 @@ func Register(c echo.Context)error{
 	})
 }
 
-
-
-func Login(c echo.Context)error{
+func Login(c echo.Context) error {
 	req := new(LoginRequest)
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid Input"})
@@ -73,28 +70,28 @@ func Login(c echo.Context)error{
 		return c.JSON(http.StatusUnauthorized, map[string]interface{}{"status": false, "message": "Invalid password"})
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256,jwt.MapClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID,
-		"exp": time.Now().Add(time.Hour * 2400).Unix(),
+		"exp":     time.Now().Add(time.Hour * 2400).Unix(),
 	})
 
-	t,err := token.SignedString("secret")
+	t, err := token.SignedString([]byte("secret"))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Token Error"})
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": true,
-		
+
 		"token": t,
-		"user":   user,
+		"user":  user,
 	})
 }
 
-func GetProfile(c echo.Context)error{
+func GetProfile(c echo.Context) error {
 	userID := c.Get("user_id").(uint)
 	var user models.User
 
-	if err := config.DB.First(&user,userID).Error;err!=nil{
+	if err := config.DB.First(&user, userID).Error; err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"message": "User not found"})
 	}
 
